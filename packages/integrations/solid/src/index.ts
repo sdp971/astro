@@ -1,5 +1,5 @@
 import type { AstroConfig, AstroIntegration, AstroRenderer } from 'astro';
-import solid from 'vite-plugin-solid';
+import solid, { type Options as ViteSolidPluginOptions } from 'vite-plugin-solid';
 
 function getRenderer(): AstroRenderer {
 	return {
@@ -9,19 +9,19 @@ function getRenderer(): AstroRenderer {
 	};
 }
 
-async function getViteConfiguration(isDev: boolean) {
-	return {
-		plugins: [solid({dev: isDev, ssr: true})]
-	};
-}
+export type Options = Pick<ViteSolidPluginOptions, 'include' | 'exclude'>;
 
-export default function (): AstroIntegration {
+export default function ({ include, exclude }: Options): AstroIntegration {
 	return {
 		name: '@astrojs/solid-js',
 		hooks: {
 			'astro:config:setup': async ({ command, addRenderer, updateConfig, config }) => {
 				addRenderer(getRenderer());
-				updateConfig({ vite: await getViteConfiguration(command === 'dev') });
+				updateConfig({
+					vite: {
+						plugins: [solid({ include, exclude, dev: command === 'dev', ssr: true })],
+					},
+				});
 			},
 		},
 	};

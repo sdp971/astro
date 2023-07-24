@@ -1,6 +1,6 @@
 import type { AstroIntegration } from 'astro';
 import { version as ReactVersion } from 'react-dom';
-import react from '@vitejs/plugin-react';
+import react, {type Options as ViteReactPluginOptions} from '@vitejs/plugin-react';
 
 const FAST_REFRESH_PREAMBLE = `
 import RefreshRuntime from '/@react-refresh'
@@ -22,7 +22,7 @@ function getRenderer() {
 	};
 }
 
-function getViteConfiguration() {
+function getViteConfiguration({include, exclude}: Options) {
 	return {
 		optimizeDeps: {
 			include: [
@@ -40,7 +40,7 @@ function getViteConfiguration() {
 					: '@astrojs/react/server-v17.js',
 			],
 		},
-		plugins: [react()],
+		plugins: [react({include, exclude})],
 		resolve: {
 			dedupe: ['react', 'react-dom', 'react-dom/server'],
 		},
@@ -60,13 +60,14 @@ function getViteConfiguration() {
 	};
 }
 
-export default function (): AstroIntegration {
+export type Options =Pick<ViteReactPluginOptions, 'include' | 'exclude'>;
+export default function ({include, exclude}: Pick<ViteReactPluginOptions, 'include' | 'exclude'>): AstroIntegration {
 	return {
 		name: '@astrojs/react',
 		hooks: {
 			'astro:config:setup': ({ command, addRenderer, updateConfig, injectScript }) => {
 				addRenderer(getRenderer());
-				updateConfig({ vite: getViteConfiguration() });
+				updateConfig({ vite: getViteConfiguration({include, exclude}) });
 				if (command === 'dev') {
 					injectScript('before-hydration', FAST_REFRESH_PREAMBLE);
 				}
